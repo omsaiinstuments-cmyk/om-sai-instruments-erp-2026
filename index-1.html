@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Om Sai Instruments ERP</title>
+<style>
+:root{--navy:#12304a;--blue:#1769aa;--bg:#f3f6fa;--card:#fff;--line:#dbe3ec;--text:#172534;--muted:#64748b;--red:#b42318;--green:#137547}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}header{background:var(--navy);color:#fff;padding:16px;position:sticky;top:0;z-index:5;box-shadow:0 2px 8px #0002}header h1{font-size:20px;margin:0 0 4px}header small{opacity:.85}.wrap{max-width:1250px;margin:auto;padding:12px}.layout{display:grid;grid-template-columns:210px 1fr;gap:12px}.sidebar,.panel,.stat{background:var(--card);border:1px solid var(--line);border-radius:12px}.sidebar{padding:8px;height:max-content;position:sticky;top:94px}.nav{width:100%;text-align:left;padding:10px;border:0;background:transparent;border-radius:8px;color:var(--text);font-size:14px;margin:2px 0}.nav.active,.nav:hover{background:#e8f2fc;color:var(--blue);font-weight:700}.content{min-width:0}.panel{padding:16px;margin-bottom:12px}.panel h2{margin:0 0 12px;font-size:19px}.muted{color:var(--muted);font-size:13px}.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:12px}.stat{padding:14px}.stat strong{font-size:24px;display:block}.stat span{font-size:12px;color:var(--muted)}.formgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:4px}.field input,.field select,.field textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;background:white;color:var(--text);font:inherit}.field textarea{min-height:70px}.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.btn{border:0;border-radius:7px;background:var(--blue);color:white;padding:10px 13px;font-weight:650;cursor:pointer}.btn.secondary{background:#e8eef5;color:var(--text)}.btn.danger{background:var(--red)}.btn.green{background:var(--green)}.tablewrap{overflow:auto;margin-top:12px}table{width:100%;border-collapse:collapse;min-width:650px;font-size:13px}th,td{border-bottom:1px solid var(--line);padding:9px;text-align:left;vertical-align:top}th{background:#f7f9fc;white-space:nowrap}.empty{text-align:center;color:var(--muted);padding:24px}.notice{padding:10px 12px;background:#fff8e6;border:1px solid #f3d38a;border-radius:8px;margin-bottom:12px;font-size:13px}.success{color:var(--green)}.hidden{display:none!important}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}.toolbar input{max-width:320px;padding:9px;border:1px solid var(--line);border-radius:7px}.pill{font-size:11px;border-radius:20px;background:#e8f2fc;padding:3px 8px;white-space:nowrap}.right{text-align:right}
+@media(max-width:760px){.layout{grid-template-columns:1fr}.sidebar{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px}.nav{font-size:12px;padding:9px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}header h1{font-size:18px}}
+@media(max-width:420px){.formgrid{grid-template-columns:1fr}.panel{padding:12px}.sidebar{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media print{header,.sidebar,.noprint,.actions{display:none!important}.layout{display:block}.panel,.stat{border:0}.wrap{max-width:none;padding:0}body{background:white}}
+</style>
+</head>
+<body>
+<header><h1>Om Sai Instruments ERP</h1><small>Industrial Instruments • Inventory • Sales & Purchase</small></header>
+<div class="wrap">
+<div class="notice"><b>महत्त्वाची सूचना:</b> हा single-browser ERP starter आहे. डेटा या डिव्हाइसच्या browser मध्ये सेव्ह होतो. Cloud sync, login, GST-compliant accounting किंवा server backup नाही. सुरुवातीला test data वापरा आणि नियमित Backup घ्या.</div>
+<div class="layout">
+<nav class="sidebar noprint" id="nav"></nav>
+<main class="content" id="app"></main>
+</div>
+</div>
+<script>
+(function(){
+'use strict';
+const KEY='omSaiInstrumentsERP_v2';
+const blank=()=>({products:[],customers:[],suppliers:[],sales:[],purchases:[],stock:[],serials:[],payments:[]});
+let db=load();
+function load(){try{return Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){return blank()}}
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render();toast('Saved on this browser.')}
+function toast(msg){let el=document.getElementById('toast');if(el){el.textContent=msg;el.classList.remove('hidden');setTimeout(()=>el.classList.add('hidden'),2500)}}
+const labels={
+dashboard:['Dashboard','डॅशबोर्ड'],products:['Product Master','प्रॉडक्ट'],customers:['Customer Master','ग्राहक'],sales:['Sales Entry / Invoice','सेल्स / बिल'],purchases:['Purchase Entry','खरेदी'],stockio:['Stock In / Out','स्टॉक आवक-जावक'],stockreg:['Stock Register','स्टॉक रजिस्टर'],serials:['Serial Number Register','सिरियल नंबर'],suppliers:['Supplier Master','सप्लायर'],payments:['Payment / Outstanding','पेमेंट / बाकी'],reports:['Reports','रिपोर्ट्स'],backup:['Backup / Restore','बॅकअप / रिस्टोर']};
+let lang='en',page='dashboard',search='';
+function L(key){return labels[key]?.[lang==='mr'?1:0]||key}
+const navOrder=Object.keys(labels);
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function num(v){return Number(v)||0}
+function money(v){return '₹'+num(v).toLocaleString('en-IN',{maximumFractionDigits:2})}
+function id(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function dateNow(){return new Date().toISOString().slice(0,10)}
+function opt(arr,first){return `<option value="">${first}</option>`+arr.map(x=>`<option value="${esc(x.id)}">${esc(x.name||x.code||x.serial||x.id)}</option>`).join('')}
+function field(name,label,type='text',required=false,extra=''){return `<div class="field"><label>${label}${required?' *':''}</label><input name="${name}" type="${type}" ${required?'required':''} ${extra}></div>`}
+function selectField(name,label,options,required=false){return `<div class="field"><label>${label}${required?' *':''}</label><select name="${name}" ${required?'required':''}>${options}</select></div>`}
+function form(title,fields,button='Save'){return `<section class="panel"><h2>${title}</h2><form class="formgrid" id="entryForm">${fields}</form><div class="actions"><button class="btn" form="entryForm" type="submit">${button}</button><button class="btn secondary" type="button" onclick="this.closest('.panel').querySelector('form').reset()">Clear</button></div></section>`}
+function table(headers,rows){return `<div class="tablewrap"><table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td class="empty" colspan="${headers.length}">No records yet</td></tr>`}</tbody></table></div>`}
+function delBtn(type,idv){return `<button class="btn danger" style="padding:5px 8px" onclick="delRecord('${type}','${idv}')">Delete</button>`}
+window.delRecord=(type,idv)=>{if(confirm('Delete this record?')){db[type]=db[type].filter(x=>x.id!==idv);save()}};
+window.go=p=>{page=p;search='';render()};
+function records(type,headers,cols){return table([...headers,'Action'],db[type].filter(x=>JSON.stringify(x).toLowerCase().includes(search.toLowerCase())).map(x=>`<tr>${cols.map(c=>`<td>${esc(c(x))}</td>`).join('')}<td>${delBtn(type,x.id)}</td></tr>`))}
+function renderNav(){document.getElementById('nav').innerHTML=navOrder.map(k=>`<button class="nav ${page===k?'active':''}" onclick="go('${k}')">${L(k)}</button>`).join('')+`<button class="nav" onclick="lang=lang==='en'?'mr':'en';render()">🌐 ${lang==='en'?'मराठी':'English'}</button>`}
+function render(){
+renderNav();let a=document.getElementById('app');let html='';
+if(page==='dashboard'){
+let stock=db.products.reduce((s,p)=>s+num(p.opening)+db.stock.filter(x=>x.product===p.id&&x.direction==='In').reduce((n,x)=>n+num(x.qty),0)-db.stock.filter(x=>x.product===p.id&&x.direction==='Out').reduce((n,x)=>n+num(x.qty),0)-db.sales.reduce((n,x)=>n+x.items.filter(i=>i.product===p.id).reduce((z,i)=>z+num(i.qty),0),0)+db.purchases.reduce((n,x)=>n+x.items.filter(i=>i.product===p.id).reduce((z,i)=>z+num(i.qty),0),0),0);
+html=`<section class="stats"><div class="stat"><strong>${db.products.length}</strong><span>Products</span></div><div class="stat"><strong>${db.customers.length}</strong><span>Customers</span></div><div class="stat"><strong>${db.sales.length}</strong><span>Sales Invoices</span></div><div class="stat"><strong>${db.suppliers.length}</strong><span>Suppliers</span></div></section><section class="panel"><h2>Dashboard</h2><p>Welcome to Om Sai Instruments ERP.</p><p>Sales total: <b>${money(db.sales.reduce((s,x)=>s+num(x.total),0))}</b> &nbsp; Purchase total: <b>${money(db.purchases.reduce((s,x)=>s+num(x.total),0))}</b></p><p>Serial instruments: <b>${db.serials.length}</b> &nbsp; Stock movement entries: <b>${db.stock.length}</b></p><p class="muted">Stock is a simple estimate; check Stock Register before using for actual operations.</p></section>`;
+}
+if(page==='products'){
+html=form('Add Product',field('code','Product Code','text',true)+field('name','Product Name','text',true)+field('make','Make / Brand')+field('model','Model')+field('unit','Unit (pcs, nos, etc.)')+field('opening','Opening Stock','number',false,'min="0" step="any"')+field('reorder','Reorder Level','number',false,'min="0" step="any"')+field('cost','Purchase Cost (₹)','number',false,'min="0" step="any"')+field('price','Selling Price (₹)','number',false,'min="0" step="any"'))+`<section class="panel"><div class="toolbar"><h2>Product List (${db.products.length})</h2><input placeholder="Search products..." oninput="search=this.value;render()"></div>${records('products',['Code','Name','Make','Model','Unit','Opening','Reorder','Cost','Price'],[x=>x.code,x=>x.name,x=>x.make,x=>x.model,x=>x.unit,x=>x.opening,x=>x.reorder,m=>money(m.cost),m=>money(m.price)])}</section>`;
+bind('products',f=>({code:f.code,name:f.name,make:f.make,model:f.model,unit:f.unit||'pcs',opening:num(f.opening),reorder:num(f.reorder),cost:num(f.cost),price:num(f.price)}));
+}
+if(page==='customers'){
+html=form('Add Customer',field('name','Customer Name','text',true)+field('mobile','Mobile')+field('email','Email','email')+field('gstin','GSTIN')+field('city','City')+field('address','Address'))+`<section class="panel"><h2>Customers (${db.customers.length})</h2>${records('customers',['Name','Mobile','Email','GSTIN','City','Address'],[x=>x.name,x=>x.mobile,x=>x.email,x=>x.gstin,x=>x.city,x=>x.address])}</section>`;
+bind('customers',f=>({name:f.name,mobile:f.mobile,email:f.email,gstin:f.gstin,city:f.city,address:f.address}));
+}
+if(page==='suppliers'){
+html=form('Add Supplier',field('name','Supplier Name','text',true)+field('mobile','Mobile')+field('email','Email','email')+field('gstin','GSTIN')+field('city','City')+field('address','Address'))+`<section class="panel"><h2>Suppliers (${db.suppliers.length})</h2>${records('suppliers',['Name','Mobile','Email','GSTIN','City','Address'],[x=>x.name,x=>x.mobile,x=>x.email,x=>x.gstin,x=>x.city,x=>x.address])}</section>`;
+bind('suppliers',f=>({name:f.name,mobile:f.mobile,email:f.email,gstin:f.gstin,city:f.city,address:f.address}));
+}
+if(page==='sales'||page==='purchases'){
+let isSale=page==='sales',type=isSale?'sales':'purchases',who=isSale?db.customers:db.suppliers,party=isSale?'Customer':'Supplier';
+html=form((isSale?'Sales Entry / Invoice':'Purchase Entry'),field('doc','Invoice / Bill No.','text',true)+selectField('party',party,opt(who,'Select '+party,true),true)+field('date','Date','date',true,`value="${dateNow()}"`)+selectField('product','Product',opt(db.products,'Select product'),true)+field('qty','Quantity','number',true,'min="0.01" step="any"')+field('rate','Rate (₹)','number',true,'min="0" step="any"')+field('paid','Amount Paid (₹)','number',false,'min="0" step="any"')+field('notes','Notes'))+`<section class="panel"><h2>${isSale?'Sales Invoices':'Purchase Bills'} (${db[type].length})</h2>${records(type,['No.','Party','Date','Items','Total','Paid','Balance'],[x=>x.doc,x=>x.partyName,x=>x.date,x=>x.items.map(i=>i.name+' × '+i.qty).join(', '),x=>money(x.total),x=>money(x.paid),x=>money(x.total-x.paid)])}</section>`;
+bind(type,f=>{let p=db.products.find(x=>x.id===f.product);let whoRec=who.find(x=>x.id===f.party);let qty=num(f.qty),rate=num(f.rate);return {doc:f.doc,party:f.party,partyName:whoRec?.name||'',date:f.date,items:[{product:p?.id,name:p?.name||'',qty,rate}],total:qty*rate,paid:num(f.paid),notes:f.notes}});
+}
+if(page==='stockio'){
+html=form('Stock In / Out',selectField('product','Product',opt(db.products,'Select product'),true)+selectField('direction','Direction','<option>In</option><option>Out</option>',true)+field('qty','Quantity','number',true,'min="0.01" step="any"')+field('date','Date','date',true,`value="${dateNow()}"`)+field('reference','Reference / Bill No.')+field('notes','Notes'))+`<section class="panel"><h2>Stock Movements</h2>${records('stock',['Date','Product','Direction','Qty','Reference','Notes'],[x=>x.date,x=>db.products.find(p=>p.id===x.product)?.name||'Deleted product',x=>x.direction,x=>x.qty,x=>x.reference,x=>x.notes])}</section>`;
+bind('stock',f=>({product:f.product,direction:f.direction,qty:num(f.qty),date:f.date,reference:f.reference,notes:f.notes}));
+}
+if(page==='stockreg'){
+let rows=db.products.map(p=>{let ins=db.stock.filter(x=>x.product===p.id&&x.direction==='In').reduce((s,x)=>s+num(x.qty),0)+db.purchases.reduce((s,x)=>s+x.items.filter(i=>i.product===p.id).reduce((z,i)=>z+num(i.qty),0),0);let outs=db.stock.filter(x=>x.product===p.id&&x.direction==='Out').reduce((s,x)=>s+num(x.qty),0)+db.sales.reduce((s,x)=>s+x.items.filter(i=>i.product===p.id).reduce((z,i)=>z+num(i.qty),0),0);let balance=num(p.opening)+ins-outs;return `<tr><td>${esc(p.code)}</td><td>${esc(p.name)}</td><td>${p.opening}</td><td>${ins}</td><td>${outs}</td><td><b>${balance}</b></td><td>${balance<=num(p.reorder)?'<span style="color:#b42318">Low stock</span>':'OK'}</td></tr>`});
+html=`<section class="panel"><h2>Stock Register</h2>${table(['Code','Product','Opening','In','Out','Balance','Status'],rows)}</section>`;
+}
+if(page==='serials'){
+html=form('Register Serial Instrument',selectField('product','Product',opt(db.products,'Select product'),true)+field('serial','Serial Number','text',true)+selectField('status','Status','<option>In Stock</option><option>Sold</option><option>Under Calibration</option><option>Sent for Repair</option><option>Returned</option>')+field('customer','Customer / Location')+field('calibration','Last Calibration','date')+field('nextcal','Next Calibration Due','date')+field('certificate','Certificate No.')+field('warranty','Warranty Until','date'))+`<section class="panel"><h2>Serial Number Register (${db.serials.length})</h2>${records('serials',['Product','Serial','Status','Customer / Location','Last Calibration','Next Due','Certificate','Warranty'],[x=>db.products.find(p=>p.id===x.product)?.name||'',x=>x.serial,x=>x.status,x=>x.customer,x=>x.calibration,x=>x.nextcal,x=>x.certificate,x=>x.warranty])}</section>`;
+bind('serials',f=>({product:f.product,serial:f.serial,status:f.status||'In Stock',customer:f.customer,calibration:f.calibration,nextcal:f.nextcal,certificate:f.certificate,warranty:f.warranty}));
+}
+if(page==='payments'){
+html=form('Payment / Outstanding Entry',selectField('type','Entry Type','<option>Receipt from Customer</option><option>Payment to Supplier</option>')+field('party','Customer / Supplier Name','text',true)+field('date','Date','date',true,`value="${dateNow()}"`)+field('amount','Amount (₹)','number',true,'min="0.01" step="any"')+field('reference','Invoice / Reference No.')+field('notes','Notes'))+`<section class="panel"><h2>Payments (${db.payments.length})</h2>${records('payments',['Type','Party','Date','Amount','Reference','Notes'],[x=>x.type,x=>x.party,x=>x.date,x=>money(x.amount),x=>x.reference,x=>x.notes])}</section><section class="panel"><h2>Invoice Outstanding</h2>${table(['Type','Party','Document','Date','Total','Paid','Balance'],[...db.sales.map(x=>`<tr><td>Sale</td><td>${esc(x.partyName)}</td><td>${esc(x.doc)}</td><td>${esc(x.date)}</td><td>${money(x.total)}</td><td>${money(x.paid)}</td><td>${money(x.total-x.paid)}</td></tr>`),...db.purchases.map(x=>`<tr><td>Purchase</td><td>${esc(x.partyName)}</td><td>${esc(x.doc)}</td><td>${esc(x.date)}</td><td>${money(x.total)}</td><td>${money(x.paid)}</td><td>${money(x.total-x.paid)}</td></tr>`)])}</section>`;
+bind('payments',f=>({type:f.type,party:f.party,date:f.date,amount:num(f.amount),reference:f.reference,notes:f.notes}));
+}
+if(page==='reports'){
+html=`<section class="panel"><h2>Reports</h2><p>Generate printable summaries using current saved records.</p><div class="actions"><button class="btn" onclick="window.print()">Print / Save PDF</button><button class="btn secondary" onclick="go('stockreg')">Stock Report</button><button class="btn secondary" onclick="go('payments')">Outstanding Report</button></div></section><section class="panel"><h2>Sales Summary</h2>${table(['Invoice Count','Sales Total','Purchase Count','Purchase Total'],[`<tr><td>${db.sales.length}</td><td>${money(db.sales.reduce((s,x)=>s+x.total,0))}</td><td>${db.purchases.length}</td><td>${money(db.purchases.reduce((s,x)=>s+x.total,0))}</td></tr>`])}</section>`;
+}
+if(page==='backup'){
+html=`<section class="panel"><h2>Backup / Restore</h2><p>Export your saved ERP records as a JSON file. Keep a copy somewhere safe.</p><div class="actions"><button class="btn green" onclick="downloadBackup()">Download Backup</button><label class="btn secondary">Restore Backup <input type="file" accept=".json,application/json" onchange="restoreBackup(event)" hidden></label><button class="btn danger" onclick="clearAll()">Delete All ERP Data</button></div><p class="muted">Restore will replace the data currently saved in this browser. Export a backup first.</p></section>`;
+}
+a.innerHTML=html+`<div id="toast" class="hidden success" style="padding:8px 4px"></div>`;
+}
+function bind(type,make){let f=document.getElementById('entryForm');if(!f)return;f.onsubmit=e=>{e.preventDefault();let data=make(Object.fromEntries(new FormData(f).entries()));if(type==='products'&&db.products.some(x=>x.code.toLowerCase()===data.code.toLowerCase())){alert('Product Code already exists.');return}if(type==='serials'&&db.serials.some(x=>x.serial.toLowerCase()===data.serial.toLowerCase())){alert('Serial Number already exists.');return}if(['sales','purchases'].includes(type)){if(!data.items[0].product){alert('Please select a product.');return}if(data.paid>data.total){alert('Paid amount cannot exceed total.');return}}data.id=id();db[type].push(data);save();}};
+window.downloadBackup=()=>{let blob=new Blob([JSON.stringify({version:2,exportedAt:new Date().toISOString(),data:db},null,2)],{type:'application/json'});let url=URL.createObjectURL(blob);let a=document.createElement('a');a.href=url;a.download='om-sai-erp-backup-'+dateNow()+'.json';a.click();URL.revokeObjectURL(url)};
+window.restoreBackup=e=>{let file=e.target.files[0];if(!file)return;let r=new FileReader();r.onload=()=>{try{let obj=JSON.parse(r.result);let incoming=obj.data||obj;if(!confirm('Restore will replace current ERP data. Continue?'))return;let next=blank();Object.keys(next).forEach(k=>{if(Array.isArray(incoming[k]))next[k]=incoming[k]});db=next;localStorage.setItem(KEY,JSON.stringify(db));render();alert('Backup restored.')}catch(err){alert('Invalid backup file.')}};r.readAsText(file)};
+window.clearAll=()=>{if(confirm('Delete all saved ERP data from this browser? This cannot be undone unless you have a backup.')){db=blank();localStorage.setItem(KEY,JSON.stringify(db));render()}};
+render();
+})();
+</script>
+</body>
+</html>
