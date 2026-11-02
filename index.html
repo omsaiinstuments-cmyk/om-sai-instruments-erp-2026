@@ -28,6 +28,7 @@ header h1{margin:0 0 4px;font-size:22px}
 .field input,.field select,.field textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;background:white}
 .field textarea{min-height:65px}
 .btn{border:0;border-radius:7px;background:var(--blue);color:white;padding:9px 12px;cursor:pointer;margin:4px 2px}
+.btn:disabled{opacity:.6;cursor:wait}
 .secondary{background:#e8eef5;color:#172534}
 .danger{background:#b42318}
 .tablewrap{overflow:auto;margin-top:10px}
@@ -98,7 +99,7 @@ function load(){
  return empty();
 }
 
-let db=load(),page="dashboard",lang="en",client=null,user=null;
+let db=load(),page="dashboard",lang="en",client=null,user=null,lastSync="";
 
 const menus=[
  ["dashboard","Dashboard","डॅशबोर्ड"],
@@ -279,11 +280,15 @@ function render(){
   <button class="btn" onclick="signup()">Create Login</button>
   <button class="btn secondary" onclick="login()">Login</button>
   <button class="btn secondary" onclick="logout()">Logout</button>
+  <button class="btn" onclick="saveCloudNow()">Save to Cloud</button>
   <button class="btn" onclick="sync()">Sync / Merge Cloud</button>
   <p id="cloudStatus" class="small">${user?"Logged in: "+esc(user.email):"Not connected"}</p>
   <p class="small">Supabase → SQL Editor मध्ये चालवा:</p>
   <pre id="sql" style="white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f9fc;padding:10px">create table if not exists public.erp_data (user_id uuid primary key references auth.users(id) on delete cascade, payload jsonb not null default '{}'::jsonb, updated_at timestamptz not null default now());
 alter table public.erp_data enable row level security;
+drop policy if exists "read own ERP" on public.erp_data;
+drop policy if exists "insert own ERP" on public.erp_data;
+drop policy if exists "update own ERP" on public.erp_data;
 create policy "read own ERP" on public.erp_data for select to authenticated using (auth.uid() = user_id);
 create policy "insert own ERP" on public.erp_data for insert to authenticated with check (auth.uid() = user_id);
 create policy "update own ERP" on public.erp_data for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);</pre>
@@ -376,8 +381,9 @@ window.login=async()=>{
   if(!c)throw Error("Save cloud settings first");
   let {data,error}=await c.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
   if(error)throw error;
-  user=data.user;render();
-  alert("Login successful. Press Sync / Merge Cloud.");
+  user=data.user;
+  render();
+  alert("Login successful. Press Save to Cloud or Sync / Merge Cloud.");
  }catch(e){alert("Login failed: "+e.message)}
 };
 
@@ -395,10 +401,42 @@ async function cloudSave(){
  let {data:{user:u},error:ue}=await c.auth.getUser();
  if(ue)throw ue;
  if(!u)throw Error("Login first");
- let {error}=await c.from("erp_data").upsert({user_id:u.id,payload:db,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+ let {error}=await c.from("erp_data").upsert(
+  {user_id:u.id,payload:db,updated_at:new Date().toISOString()},
+  {onConflict:"user_id"}
+ );
  if(error)throw error;
  user=u;
 }
+
+window.saveCloudNow=async()=>{
+ let btn=document.querySelector('button[onclick="saveCloudNow()"]');
+ try{
+  if(btn){btn.disabled=true;btn.textContent="Saving..."}
+  let c=init();
+  if(!c)throw Error("Cloud settings missing. Check URL and Publishable Key.");
+  let {data:{user:u},error:ue}=await c.auth.getUser();
+  if(ue)throw ue;
+  if(!u)throw Error("Please login first.");
+
+  persist();
+
+  let {error}=await c.from("erp_data").upsert(
+   {user_id:u.id,payload:db,updated_at:new Date().toISOString()},
+   {onConflict:"user_id"}
+  );
+  if(error)throw error;
+
+  user=u;
+  let status=$("cloudStatus");
+  if(status)status.textContent="Cloud Save Successful: "+u.email;
+  alert("ERP data successfully saved to Supabase Cloud.");
+ }catch(e){
+  alert("Cloud Save Failed: "+e.message);
+ }finally{
+  if(btn){btn.disabled=false;btn.textContent="Save to Cloud"}
+ }
+};
 
 window.sync=async()=>{
  try{
@@ -408,8 +446,10 @@ window.sync=async()=>{
   if(ue)throw ue;
   if(!u)throw Error("Login first");
   user=u;
+
   let {data,error}=await c.from("erp_data").select("payload").eq("user_id",u.id).maybeSingle();
   if(error)throw error;
+
   if(data&&data.payload){
    let remote=norm(data.payload),merged=empty();
    T.forEach(t=>{
@@ -420,6 +460,7 @@ window.sync=async()=>{
    });
    db=merged;
   }
+
   persist();
   await cloudSave();
   render();
@@ -431,12 +472,14 @@ window.sync=async()=>{
 
 try{persist()}catch(e){}
 render();
+
 try{
  let c=init();
  if(c)c.auth.getSession().then(({data})=>{
   if(data.session){user=data.session.user;render()}
  });
 }catch(e){}
+
 })();
 </script>
 </body>
