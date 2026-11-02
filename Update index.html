@@ -1,540 +1,443 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Om Sai Instruments ERP</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--navy:#12304a;--blue:#1769aa;--bg:#f3f6fa;--line:#dbe3ec;--text:#172534;--white:#fff;--red:#c62828;--green:#218838}
+:root{--navy:#12304a;--blue:#1769aa;--bg:#f3f6fa;--line:#dbe3ec;--text:#172534}
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text)}
-header{background:var(--navy);color:white;padding:17px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
-header h2{margin:0;font-size:21px}
-button{border:0;border-radius:6px;padding:10px 13px;background:var(--blue);color:white;cursor:pointer;font-size:14px;margin:3px}
-button:hover{opacity:.88}
-button.danger{background:var(--red)}
-button.green{background:var(--green)}
-input,select,textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:6px;margin:5px 0 12px;background:white;font-size:15px}
-label{font-weight:bold;font-size:13px}
-.layout{display:flex;min-height:calc(100vh - 65px)}
-nav{width:220px;background:#fff;border-right:1px solid var(--line);padding:12px;flex-shrink:0}
-nav button{width:100%;text-align:left;background:transparent;color:var(--text);margin:2px 0;padding:11px}
-nav button.active,nav button:hover{background:#e6f1fc;color:#075da1}
-main{flex:1;padding:20px;min-width:0}
-.card{background:white;border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:15px;box-shadow:0 2px 6px #122f4a0a}
-h2,h3{margin-top:0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
-.metric{padding:18px;background:white;border:1px solid var(--line);border-radius:9px}
-.metric strong{display:block;font-size:25px;color:var(--blue);margin-top:8px}
-.table-wrap{overflow-x:auto}
-table{border-collapse:collapse;width:100%;background:white}
-th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;font-size:13px}
-th{background:#eaf1f8}
-.small{font-size:12px;color:#5b6775}
-.status{padding:9px;background:#e9f5ff;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere}
-.hidden{display:none!important}
-.auth{max-width:440px;margin:30px auto;padding:22px}
-.actions{display:flex;gap:5px;flex-wrap:wrap;align-items:center}
-#menuToggle{display:none}
-@media(max-width:700px){
- .layout{display:block}
- nav{display:none;width:100%;border-bottom:1px solid var(--line)}
- nav.open{display:block}
- main{padding:10px}
- #menuToggle{display:inline-block}
- header h2{font-size:17px}
+body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 Arial,sans-serif}
+header{background:var(--navy);color:white;padding:16px}
+header h1{margin:0 0 4px;font-size:22px}
+.wrap{max-width:1300px;margin:auto;padding:12px}
+.notice,.panel,.stat,.sidebar{background:white;border:1px solid var(--line);border-radius:10px}
+.notice{padding:10px;background:#fff8e6;border-color:#f3d38a;margin-bottom:12px}
+.layout{display:grid;grid-template-columns:205px minmax(0,1fr);gap:12px}
+.sidebar{padding:8px;height:max-content}
+.nav{display:block;width:100%;text-align:left;padding:9px;border:0;background:white;border-radius:7px;margin:2px 0;cursor:pointer}
+.nav.active{background:#e8f2fc;color:var(--blue);font-weight:bold}
+.panel{padding:14px;margin-bottom:12px;min-width:0}
+.panel h2{margin:0 0 12px;font-size:18px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.stat{padding:12px}
+.stat strong{display:block;font-size:22px;overflow-wrap:anywhere}
+.stat span,.small{color:#64748b;font-size:12px}
+.formgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.field label{display:block;font-size:12px;font-weight:bold;margin-bottom:4px}
+.field input,.field select,.field textarea{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:7px;background:white}
+.field textarea{min-height:65px}
+.btn{border:0;border-radius:7px;background:var(--blue);color:white;padding:9px 12px;cursor:pointer;margin:4px 2px}
+.secondary{background:#e8eef5;color:#172534}
+.danger{background:#b42318}
+.tablewrap{overflow:auto;margin-top:10px}
+table{width:100%;border-collapse:collapse;min-width:620px;font-size:12px}
+th,td{border-bottom:1px solid var(--line);padding:8px;text-align:left}
+th{background:#f7f9fc}
+.pill{padding:3px 8px;border-radius:20px;background:#fee4e2;color:#b42318}
+@media(max-width:800px){
+.layout{grid-template-columns:1fr}
+.sidebar{display:grid;grid-template-columns:repeat(3,1fr)}
+.nav{font-size:11px;padding:7px}
+.formgrid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:480px){
+.formgrid{grid-template-columns:1fr}
+.sidebar{grid-template-columns:repeat(2,1fr)}
+}
+@media print{
+header,.sidebar,.noprint,.btn,.notice{display:none!important}
+.layout{display:block}
+.panel{border:0}
+table{min-width:0;font-size:10px}
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header>
-  <div class="actions">
-    <button id="menuToggle" onclick="toggleMenu()">☰</button>
-    <h2>Om Sai Instruments ERP</h2>
-  </div>
-  <div class="actions">
-    <span id="userLabel" class="small" style="color:white">Not logged in</span>
-    <button onclick="showPage('cloud')">Cloud / Backup</button>
-    <button onclick="logout()">Logout</button>
-  </div>
+<h1>Om Sai Instruments ERP</h1>
+Industrial Instruments • Sales • Purchase • Inventory
 </header>
-
-<section id="authPage" class="card auth">
-  <h2>ERP Login</h2>
-  <p class="small">Login to your Om Sai Instruments account.</p>
-  <label>Supabase Project URL</label>
-  <input id="sbUrl" placeholder="https://your-project.supabase.co">
-  <label>Supabase Publishable Key</label>
-  <input id="sbKey" placeholder="sb_publishable_...">
-  <button onclick="saveSettings()">Save Supabase Settings</button>
-  <hr>
-  <label>Email</label>
-  <input id="authEmail" type="email" placeholder="your@email.com">
-  <label>Password</label>
-  <input id="authPassword" type="password" placeholder="Password">
-  <button onclick="login()">Login</button>
-  <button class="green" onclick="signup()">Create Account</button>
-  <div id="authStatus" class="status">Enter your Supabase URL and Publishable Key.</div>
-</section>
-
-<div id="app" class="layout hidden">
-<nav id="nav">
-  <button data-page="dashboard" onclick="showPage('dashboard')">🏠 Dashboard</button>
-  <button data-page="products" onclick="showPage('products')">📦 Product Master</button>
-  <button data-page="customers" onclick="showPage('customers')">👥 Customer Master</button>
-  <button data-page="suppliers" onclick="showPage('suppliers')">🏭 Supplier Master</button>
-  <button data-page="sales" onclick="showPage('sales')">🧾 Sales / Tax Invoice</button>
-  <button data-page="purchases" onclick="showPage('purchases')">🛒 Purchase Entry</button>
-  <button data-page="stockin" onclick="showPage('stockin')">Stock In</button>
-  <button data-page="stockout" onclick="showPage('stockout')">Stock Out</button>
-  <button data-page="stock" onclick="showPage('stock')">📊 Stock Register</button>
-  <button data-page="serials" onclick="showPage('serials')">🔢 Serial Number Register</button>
-  <button data-page="payments" onclick="showPage('payments')">💰 Payment / Outstanding</button>
-  <button data-page="reports" onclick="showPage('reports')">📈 Reports / Export</button>
-  <button data-page="cloud" onclick="showPage('cloud')">☁️ Cloud / Backup</button>
-</nav>
-<main id="content"></main>
+<div class="wrap">
+<div class="notice"><b>महत्त्वाचे:</b> जुना डेटा या ब्राउझरमध्ये सुरक्षित ठेवण्याचा प्रयत्न केला जातो. Cloud सुरू करण्यापूर्वी Backup घ्या. Supabase URL/Publishable Key आणि SQL setup आवश्यक आहे.</div>
+<div class="layout">
+<nav class="sidebar" id="nav"></nav>
+<main id="app"></main>
+</div>
 </div>
 
 <script>
-/*
-SUPABASE SQL — RUN THIS IN SUPABASE SQL EDITOR
+(()=>{"use strict";
 
-create table if not exists public.erp_data (
- user_id uuid primary key references auth.users(id) on delete cascade,
- payload jsonb not null default '{}'::jsonb,
- updated_at timestamptz not null default now()
-);
+const KEY="omSaiInstrumentsERP_v3";
+const OLD=["omSaiInstrumentsERP_v2","omSaiInstrumentsERP_v3"];
+const CFG="omSaiERP_cloud_config_v1";
+const T=["products","customers","suppliers","sales","purchases","stock","serials","payments"];
 
+const empty=()=>Object.fromEntries(T.map(k=>[k,[]]));
+
+function norm(x){
+ let d=empty();
+ if(x&&typeof x==="object")T.forEach(k=>{
+  if(Array.isArray(x[k]))d[k]=x[k]
+ });
+ return d;
+}
+
+function load(){
+ for(let k of OLD){
+  try{
+   let x=JSON.parse(localStorage.getItem(k)||"null");
+   if(x){
+    let d=norm(x.data||x);
+    if(T.some(t=>d[t].length))return d
+   }
+  }catch(e){}
+ }
+ return empty();
+}
+
+let db=load(),page="dashboard",lang="en",client=null,user=null;
+
+const menus=[
+ ["dashboard","Dashboard","डॅशबोर्ड"],
+ ["products","Product Master","प्रॉडक्ट"],
+ ["customers","Customer Master","ग्राहक"],
+ ["sales","Sales / Tax Invoice","सेल्स / बिल"],
+ ["purchases","Purchase Entry","खरेदी"],
+ ["stockio","Stock In / Out","स्टॉक आवक-जावक"],
+ ["stockreg","Stock Register","स्टॉक रजिस्टर"],
+ ["serials","Serial Number Register","सिरियल नंबर"],
+ ["suppliers","Supplier Master","सप्लायर"],
+ ["payments","Payment / Outstanding","पेमेंट / बाकी"],
+ ["reports","Reports / Export","रिपोर्ट्स"],
+ ["backup","Backup / Cloud Setup","बॅकअप / क्लाउड"]
+];
+
+const $=x=>document.getElementById(x);
+const N=x=>Number(x)||0;
+const M=x=>"₹"+N(x).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
+const sum=(a,f)=>a.reduce((s,x)=>s+N(f(x)),0);
+const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today=()=>new Date().toISOString().slice(0,10);
+const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function persist(){
+ localStorage.setItem(KEY,JSON.stringify(db))
+}
+
+function balance(pid){
+ let p=db.products.find(x=>x.id===pid);
+ if(!p)return 0;
+ return N(p.opening)
+ +sum(db.stock.filter(x=>x.product===pid&&x.direction==="In"),x=>x.qty)
+ +sum(db.purchases.filter(x=>x.product===pid),x=>x.qty)
+ -sum(db.stock.filter(x=>x.product===pid&&x.direction==="Out"),x=>x.qty)
+ -sum(db.sales.filter(x=>x.product===pid),x=>x.qty);
+}
+
+function tbl(head,rows){
+ return `<div class="tablewrap"><table><thead><tr>${head.map(x=>`<th>${x}</th>`).join("")}</tr></thead><tbody>${rows.length?rows.join(""):`<tr><td colspan="${head.length}">No records yet</td></tr>`}</tbody></table></div>`;
+}
+
+function field(n,t,type="text",req=false,extra=""){
+ return `<div class="field"><label>${t}${req?" *":""}</label><input name="${n}" type="${type}" ${req?"required":""} ${extra}></div>`;
+}
+
+function sel(n,t,arr,req=true,label=x=>x.name||x.code||x.serial){
+ return `<div class="field"><label>${t}</label><select name="${n}" ${req?"required":""}><option value="">Select ${t}</option>${arr.map(x=>`<option value="${esc(x.id)}">${esc(label(x))}</option>`).join("")}</select></div>`;
+}
+
+function form(title,fields){
+ return `<section class="panel"><h2>${title}</h2><form id="f" class="formgrid">${fields}</form><button class="btn" form="f">Save</button><button class="btn secondary" type="button" onclick="$('f').reset()">Clear</button></section>`;
+}
+
+function list(type,heads,cols){
+ return tbl([...heads,"Action"],db[type].map(x=>`<tr>${cols.map(fn=>`<td>${esc(fn(x))}</td>`).join("")}<td><button class="btn danger" onclick="del('${type}','${esc(x.id)}')">Delete</button></td></tr>`));
+}
+
+function attach(type,maker){
+ let f=$("f");
+ if(!f)return;
+ f.onsubmit=async e=>{
+  e.preventDefault();
+  if(!f.reportValidity())return;
+  let v=Object.fromEntries(new FormData(f).entries()),r;
+  try{r=maker(v)}catch(err){alert(err.message);return}
+  if(!r)return;
+  r.id=id();
+  db[type].push(r);
+  try{persist()}catch(err){
+   db[type].pop();
+   alert("Save failed. Download backup / check storage.");
+   return;
+  }
+  render();
+  if(user){
+   try{await cloudSave();alert("Saved and synced to cloud.")}
+   catch(err){alert("Local save done; cloud sync failed: "+err.message)}
+  }else alert("Saved on this device. Cloud login is required for multi-device access.");
+ };
+}
+
+window.del=async(t,rid)=>{
+ if(!confirm("Delete this record?"))return;
+ db[t]=db[t].filter(x=>x.id!==rid);
+ persist();
+ render();
+ if(user)try{await cloudSave()}catch(e){alert("Deleted locally but cloud sync failed: "+e.message)}
+};
+
+window.go=p=>{page=p;render()};
+window.toggleLang=()=>{lang=lang==="en"?"mr":"en";render()};
+
+function render(){
+ $("nav").innerHTML=menus.map(m=>`<button class="nav ${page===m[0]?"active":""}" onclick="go('${m[0]}')">${m[lang==="mr"?2:1]}</button>`).join("")+`<button class="nav" onclick="toggleLang()">${lang==="en"?"मराठी":"English"}</button>`;
+ let h="",a=null;
+
+ if(page==="dashboard"){
+  h=`<section class="panel"><h2>Dashboard</h2><p class="small">${user?"Cloud: "+esc(user.email):"Local mode — cloud not connected"}</p><div class="stats">${[["Products",db.products.length],["Customers",db.customers.length],["Sales Invoices",db.sales.length],["Suppliers",db.suppliers.length],["Total Sales",M(sum(db.sales,x=>x.total))],["Purchases",M(sum(db.purchases,x=>x.total))]].map(x=>`<div class="stat"><strong>${x[1]}</strong><span>${x[0]}</span></div>`).join("")}</div></section><section class="panel"><h2>Low Stock Alert</h2>${tbl(["Product","Available","Reorder"],db.products.filter(p=>balance(p.id)<=N(p.reorder)).map(p=>`<tr><td>${esc(p.name)}</td><td>${balance(p.id)}</td><td>${N(p.reorder)} <span class="pill">Low Stock</span></td></tr>`))}</section>`;
+ }
+
+ if(page==="products"){
+  h=form("Add Product",field("code","Product Code","text",true)+field("name","Product Name","text",true)+field("make","Make / Brand")+field("model","Model")+field("unit","Unit")+field("opening","Opening Stock","number")+field("reorder","Reorder Level","number")+field("cost","Purchase Cost ₹","number")+field("price","Selling Price ₹","number"))+`<section class="panel"><h2>Product List</h2>${list("products",["Code","Name","Make","Model","Unit","Opening","Reorder","Cost","Price"],[x=>x.code,x=>x.name,x=>x.make,x=>x.model,x=>x.unit,x=>x.opening,x=>x.reorder,x=>M(x.cost),x=>M(x.price)])}</section>`;
+  a=["products",f=>{
+   if(db.products.some(x=>x.code.toLowerCase()===f.code.trim().toLowerCase()))throw Error("Product code already exists.");
+   return {code:f.code.trim(),name:f.name.trim(),make:f.make,model:f.model,unit:f.unit||"pcs",opening:Math.max(0,N(f.opening)),reorder:Math.max(0,N(f.reorder)),cost:Math.max(0,N(f.cost)),price:Math.max(0,N(f.price))};
+  }];
+ }
+
+ if(page==="customers"||page==="suppliers"){
+  let t=page;
+  h=form("Add "+(t==="customers"?"Customer":"Supplier"),field("name","Name","text",true)+field("mobile","Mobile")+field("email","Email","email")+field("gstin","GSTIN")+field("city","City")+field("address","Address"))+`<section class="panel"><h2>${t} List</h2>${list(t,["Name","Mobile","Email","GSTIN","City","Address"],[x=>x.name,x=>x.mobile,x=>x.email,x=>x.gstin,x=>x.city,x=>x.address])}</section>`;
+  a=[t,f=>({name:f.name.trim(),mobile:f.mobile,email:f.email,gstin:f.gstin,city:f.city,address:f.address})];
+ }
+
+ if(page==="sales"||page==="purchases"){
+  let sale=page==="sales",t=sale?"sales":"purchases",parties=sale?db.customers:db.suppliers;
+  h=form(sale?"Sales Tax Invoice":"Purchase Entry",field("doc","Invoice / Bill No.","text",true)+sel("party",sale?"Customer":"Supplier",parties)+field("date","Date","date",true)+sel("product","Product",db.products)+field("qty","Quantity","number",true,'min=".001" step="any"')+field("rate","Rate ₹","number",true,'min="0" step="any"')+field("gst","GST %","number",false,'min="0" max="100" step="any"')+field("paid","Paid ₹","number",false,'min="0" step="any"'))+`<section class="panel"><h2>${sale?"Sales Invoices":"Purchase Bills"}</h2>${list(t,["No.","Party","Date","Product","Qty","Taxable","GST","Total","Paid","Balance"],[x=>x.doc,x=>x.partyName,x=>x.date,x=>x.productName,x=>x.qty,x=>M(x.subtotal??x.total),x=>M(x.gstAmount),x=>M(x.total),x=>M(x.paid),x=>M(x.total-x.paid)])}<button class="btn secondary" onclick="csv('${t}')">Export CSV</button></section>`;
+  a=[t,f=>{
+   let p=db.products.find(x=>x.id===f.product),party=parties.find(x=>x.id===f.party);
+   if(!p||!party)throw Error("Select product and party.");
+   if(db[t].some(x=>x.doc.toLowerCase()===f.doc.trim().toLowerCase()))throw Error("Document number already exists.");
+   let qty=N(f.qty),rate=N(f.rate),gst=N(f.gst),subtotal=qty*rate,gstAmount=subtotal*gst/100,total=subtotal+gstAmount,paid=N(f.paid);
+   if(qty<=0||rate<0||gst<0||gst>100||paid<0||paid>total)throw Error("Check quantity, GST and payment.");
+   if(sale&&qty>balance(p.id))throw Error("Insufficient stock. Available: "+balance(p.id));
+   return {doc:f.doc.trim(),partyId:party.id,partyName:party.name,date:f.date,product:p.id,productName:p.name,qty,rate,gst,subtotal,gstAmount,total,paid};
+  }];
+ }
+
+ if(page==="stockio"){
+  h=form("Stock In / Out",sel("product","Product",db.products,true,p=>p.name+" (Available "+balance(p.id)+")")+'<div class="field"><label>Direction</label><select name="direction"><option>In</option><option>Out</option></select></div>'+field("qty","Quantity","number",true,'min=".001" step="any"')+field("date","Date","date",true)+field("reference","Reference")+field("notes","Notes"))+`<section class="panel"><h2>Stock History</h2>${list("stock",["Date","Product","Direction","Qty","Reference","Notes"],[x=>x.date,x=>db.products.find(p=>p.id===x.product)?.name||"",x=>x.direction,x=>x.qty,x=>x.reference,x=>x.notes])}</section>`;
+  a=["stock",f=>{
+   if(!db.products.some(p=>p.id===f.product)||N(f.qty)<=0)throw Error("Select product and valid quantity.");
+   if(f.direction==="Out"&&N(f.qty)>balance(f.product))throw Error("Insufficient stock.");
+   return {product:f.product,direction:f.direction,qty:N(f.qty),date:f.date,reference:f.reference,notes:f.notes};
+  }];
+ }
+
+ if(page==="stockreg"){
+  h=`<section class="panel"><h2>Stock Register</h2><button class="btn secondary" onclick="csv('stockreg')">Export CSV</button>${tbl(["Code","Product","Opening","In","Out","Balance","Status"],db.products.map(p=>{let i=sum(db.stock.filter(x=>x.product===p.id&&x.direction==="In"),x=>x.qty)+sum(db.purchases.filter(x=>x.product===p.id),x=>x.qty),o=sum(db.stock.filter(x=>x.product===p.id&&x.direction==="Out"),x=>x.qty)+sum(db.sales.filter(x=>x.product===p.id),x=>x.qty),b=balance(p.id);return `<tr><td>${esc(p.code)}</td><td>${esc(p.name)}</td><td>${N(p.opening)}</td><td>${i}</td><td>${o}</td><td>${b}</td><td>${b<=N(p.reorder)?"LOW":"OK"}</td></tr>`}))}</section>`;
+ }
+
+ if(page==="serials"){
+  h=form("Serial Number Register",sel("product","Product",db.products)+field("serial","Serial Number","text",true)+'<div class="field"><label>Status</label><select name="status"><option>In Stock</option><option>Sold</option><option>Under Calibration</option><option>Sent for Repair</option></select></div>'+field("customer","Customer / Location")+field("calibration","Last Calibration","date")+field("nextcal","Next Calibration Due","date")+field("certificate","Certificate No.")+field("warranty","Warranty Until","date"))+`<section class="panel"><h2>Serial Register</h2>${list("serials",["Product","Serial","Status","Customer","Last Cal.","Next Due","Certificate","Warranty"],[x=>db.products.find(p=>p.id===x.product)?.name||"",x=>x.serial,x=>x.status,x=>x.customer,x=>x.calibration,x=>x.nextcal,x=>x.certificate,x=>x.warranty])}</section>`;
+  a=["serials",f=>{
+   if(db.serials.some(x=>x.serial.toLowerCase()===f.serial.trim().toLowerCase()))throw Error("Serial number already exists.");
+   return {...f,serial:f.serial.trim()};
+  }];
+ }
+
+ if(page==="payments"){
+  h=form("Payment Entry",'<div class="field"><label>Type</label><select name="type"><option>Receipt from Customer</option><option>Payment to Supplier</option></select></div>'+field("party","Party","text",true)+field("date","Date","date",true)+field("amount","Amount ₹","number",true,'min=".01" step="any"')+field("reference","Invoice / Reference")+field("notes","Notes"))+`<section class="panel"><h2>Payments</h2>${list("payments",["Type","Party","Date","Amount","Reference","Notes"],[x=>x.type,x=>x.party,x=>x.date,x=>M(x.amount),x=>x.reference,x=>x.notes])}</section><section class="panel"><h2>Invoice Outstanding</h2>${tbl(["Type","Party","Doc","Total","Paid","Balance"],[...db.sales.map(x=>`<tr><td>Sale</td><td>${esc(x.partyName)}</td><td>${esc(x.doc)}</td><td>${M(x.total)}</td><td>${M(x.paid)}</td><td>${M(x.total-x.paid)}</td></tr>`),...db.purchases.map(x=>`<tr><td>Purchase</td><td>${esc(x.partyName)}</td><td>${esc(x.doc)}</td><td>${M(x.total)}</td><td>${M(x.paid)}</td><td>${M(x.total-x.paid)}</td></tr>`)])}</section>`;
+  a=["payments",f=>{
+   if(N(f.amount)<=0)throw Error("Enter valid amount.");
+   return {...f,amount:N(f.amount)};
+  }];
+ }
+
+ if(page==="reports"){
+  h=`<section class="panel"><h2>Reports</h2><p>Sales: <b>${M(sum(db.sales,x=>x.total))}</b></p><p>Purchases: <b>${M(sum(db.purchases,x=>x.total))}</b></p><p>Sales outstanding: <b>${M(sum(db.sales,x=>x.total-x.paid))}</b></p><p>Purchase outstanding: <b>${M(sum(db.purchases,x=>x.total-x.paid))}</b></p><button class="btn" onclick="printInvoice()">Print / Save PDF</button>${T.map(t=>`<button class="btn secondary" onclick="csv('${t}')">${t} CSV</button>`).join("")}<button class="btn secondary" onclick="csv('stockreg')">Stock CSV</button></section>`;
+ }
+
+ if(page==="backup"){
+  h=`<section class="panel"><h2>Backup / Restore</h2>
+  <button class="btn" onclick="backup()">Download JSON Backup</button>
+  <div class="field"><label>Restore JSON</label><input type="file" accept=".json,application/json" onchange="restore(event)"></div>
+  <hr><h2>Cloud Database Setup</h2>
+  <p class="small">Supabase project URL आणि Publishable Key भरा. प्रथम SQL Editor मध्ये खालील SQL चालवा.</p>
+  <div class="formgrid">
+  <div class="field"><label>Project URL</label><input id="url" placeholder="https://project.supabase.co"></div>
+  <div class="field"><label>Publishable Key</label><input id="key" placeholder="sb_publishable_..."></div>
+  </div>
+  <button class="btn" onclick="setup()">Save Cloud Settings</button>
+  <div class="formgrid">
+  <div class="field"><label>Login Email</label><input id="email" type="email"></div>
+  <div class="field"><label>Password (8+ characters)</label><input id="password" type="password"></div>
+  </div>
+  <button class="btn" onclick="signup()">Create Login</button>
+  <button class="btn secondary" onclick="login()">Login</button>
+  <button class="btn secondary" onclick="logout()">Logout</button>
+  <button class="btn" onclick="sync()">Sync / Merge Cloud</button>
+  <p id="cloudStatus" class="small">${user?"Logged in: "+esc(user.email):"Not connected"}</p>
+  <p class="small">Supabase → SQL Editor मध्ये चालवा:</p>
+  <pre id="sql" style="white-space:pre-wrap;overflow-wrap:anywhere;background:#f7f9fc;padding:10px">create table if not exists public.erp_data (user_id uuid primary key references auth.users(id) on delete cascade, payload jsonb not null default '{}'::jsonb, updated_at timestamptz not null default now());
 alter table public.erp_data enable row level security;
+create policy "read own ERP" on public.erp_data for select to authenticated using (auth.uid() = user_id);
+create policy "insert own ERP" on public.erp_data for insert to authenticated with check (auth.uid() = user_id);
+create policy "update own ERP" on public.erp_data for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);</pre>
+  <button class="btn secondary" onclick="navigator.clipboard.writeText($('sql').textContent).then(()=>alert('SQL copied')).catch(()=>alert('Select and copy SQL manually'))">Copy SQL</button>
+  <p class="small">Cloud sync is a basic single-user setup. Take backups regularly. Avoid simultaneous edits on multiple devices until a more advanced conflict-safe sync is implemented. Never place a Supabase Secret/service_role key in this file.</p>
+  </section>`;
+ }
 
-drop policy if exists "read own ERP" on public.erp_data;
-drop policy if exists "insert own ERP" on public.erp_data;
-drop policy if exists "update own ERP" on public.erp_data;
+ $("app").innerHTML=h;
+ if(a)attach(a[0],a[1]);
+ if(page==="backup"){
+  let c=cfg();
+  $("url").value=c.url||"";
+  $("key").value=c.key||"";
+ }
+}
 
-create policy "read own ERP" on public.erp_data
- for select to authenticated using (auth.uid() = user_id);
+window.backup=()=>{
+ let b=new Blob([JSON.stringify({version:3,exportedAt:new Date().toISOString(),data:db},null,2)],{type:"application/json"});
+ let u=URL.createObjectURL(b),a=document.createElement("a");
+ a.href=u;a.download="om-sai-erp-backup-"+today()+".json";a.click();
+ setTimeout(()=>URL.revokeObjectURL(u),1000);
+};
 
-create policy "insert own ERP" on public.erp_data
- for insert to authenticated with check (auth.uid() = user_id);
+window.restore=e=>{
+ let f=e.target.files[0];if(!f)return;
+ let r=new FileReader();
+ r.onload=()=>{
+  try{
+   let x=JSON.parse(r.result);
+   if(!confirm("Restore replaces local data. Continue?"))return;
+   db=norm(x.data||x);persist();render();
+   alert("Local backup restored. Check data before cloud sync.");
+  }catch(err){alert("Invalid JSON backup")}
+ };
+ r.readAsText(f);
+};
 
-create policy "update own ERP" on public.erp_data
- for update to authenticated using (auth.uid() = user_id)
- with check (auth.uid() = user_id);
-*/
+window.csv=t=>{
+ let rows;
+ if(t==="stockreg")rows=[["Code","Product","Opening","Balance"],...db.products.map(p=>[p.code,p.name,p.opening,balance(p.id)])];
+ else{
+  let arr=db[t]||[],keys=arr.length?Object.keys(arr[0]):[];
+  rows=[keys,...arr.map(x=>keys.map(k=>x[k]))];
+ }
+ let s="\ufeff"+rows.map(r=>r.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
+ let b=new Blob([s],{type:"text/csv;charset=utf-8"}),u=URL.createObjectURL(b),a=document.createElement("a");
+ a.href=u;a.download=t+"-"+today()+".csv";a.click();
+ setTimeout(()=>URL.revokeObjectURL(u),1000);
+};
 
-const STORE_KEY = "omSaiInstrumentsERP_v3";
-const SET_KEY = "omSaiInstrumentsSupabaseSettings";
+window.printInvoice=()=>window.print();
 
-const modules = {
- products:{
-  title:"Product Master",
-  fields:[
-   ["name","Product Name","text"],["code","Product Code","text"],
-   ["category","Category","text"],["unit","Unit","text"],
-   ["price","Selling Price","number"],["cost","Purchase Price","number"],
-   ["openingStock","Opening Stock","number"],["minStock","Minimum Stock","number"]
-  ]
- },
- customers:{
-  title:"Customer Master",
-  fields:[
-   ["name","Customer Name","text"],["phone","Phone","text"],
-   ["email","Email","email"],["gstin","GSTIN","text"],
-   ["address","Address","text"],["openingBalance","Opening Balance","number"]
-  ]
- },
- suppliers:{
-  title:"Supplier Master",
-  fields:[
-   ["name","Supplier Name","text"],["phone","Phone","text"],
-   ["email","Email","email"],["gstin","GSTIN","text"],
-   ["address","Address","text"],["openingBalance","Opening Balance","number"]
-  ]
- },
- sales:{
-  title:"Sales / Tax Invoice",
-  fields:[
-   ["invoiceNo","Invoice Number","text"],["date","Invoice Date","date"],
-   ["customer","Customer","text"],["product","Product","text"],
-   ["qty","Quantity","number"],["rate","Rate","number"],
-   ["tax","GST %","number"],["paid","Amount Paid","number"],
-   ["notes","Notes","text"]
-  ]
- },
- purchases:{
-  title:"Purchase Entry",
-  fields:[
-   ["billNo","Supplier Bill Number","text"],["date","Purchase Date","date"],
-   ["supplier","Supplier","text"],["product","Product","text"],
-   ["qty","Quantity","number"],["rate","Purchase Rate","number"],
-   ["tax","GST %","number"],["paid","Amount Paid","number"]
-  ]
- },
- stockin:{
-  title:"Stock In",
-  fields:[
-   ["date","Date","date"],["product","Product","text"],
-   ["qty","Quantity In","number"],["reference","Reference / Bill","text"],
-   ["notes","Notes","text"]
-  ]
- },
- stockout:{
-  title:"Stock Out",
-  fields:[
-   ["date","Date","date"],["product","Product","text"],
-   ["qty","Quantity Out","number"],["reference","Reference / Invoice","text"],
-   ["notes","Notes","text"]
-  ]
- },
- serials:{
-  title:"Serial Number Register",
-  fields:[
-   ["serial","Serial Number","text"],["product","Product","text"],
-   ["customer","Customer","text"],["invoiceNo","Invoice Number","text"],
-   ["date","Date","date"],["warranty","Warranty / Expiry","date"],
-   ["status","Status","text"]
-  ]
- },
- payments:{
-  title:"Payment / Outstanding",
-  fields:[
-   ["date","Date","date"],["party","Customer / Supplier","text"],
-   ["type","Type (Received / Paid)","text"],["reference","Invoice / Bill No.","text"],
-   ["amount","Amount","number"],["method","Payment Method","text"],
-   ["notes","Notes","text"]
-  ]
+function cfg(){
+ try{return JSON.parse(localStorage.getItem(CFG)||"{}")}
+ catch(e){return {}}
+}
+
+function init(){
+ let c=cfg();
+ if(!c.url||!c.key||!window.supabase)return null;
+ client=window.supabase.createClient(c.url,c.key);
+ return client;
+}
+
+window.setup=()=>{
+ let url=$("url").value.trim().replace(/\/+$/,""),key=$("key").value.trim();
+ if(!/^https:\/\/.+\.supabase\.co$/.test(url)||!key){
+  alert("Enter valid project URL and Publishable Key");return;
+ }
+ localStorage.setItem(CFG,JSON.stringify({url,key}));
+ init();
+ alert("Settings saved. Create account or login.");
+};
+
+window.signup=async()=>{
+ try{
+  let c=init(),email=$("email").value.trim(),password=$("password").value;
+  if(!c)throw Error("Save cloud settings first");
+  if(password.length<8)throw Error("Password must be at least 8 characters");
+  let {error}=await c.auth.signUp({email,password});
+  if(error)throw error;
+  alert("Signup sent. Check email confirmation if enabled, then login.");
+ }catch(e){alert(e.message)}
+};
+
+window.login=async()=>{
+ try{
+  let c=init();
+  if(!c)throw Error("Save cloud settings first");
+  let {data,error}=await c.auth.signInWithPassword({email:$("email").value.trim(),password:$("password").value});
+  if(error)throw error;
+  user=data.user;render();
+  alert("Login successful. Press Sync / Merge Cloud.");
+ }catch(e){alert("Login failed: "+e.message)}
+};
+
+window.logout=async()=>{
+ try{
+  if(client)await client.auth.signOut();
+  user=null;render();
+  alert("Logged out. Local data remains.");
+ }catch(e){alert(e.message)}
+};
+
+async function cloudSave(){
+ let c=init();
+ if(!c)throw Error("Cloud config missing");
+ let {data:{user:u},error:ue}=await c.auth.getUser();
+ if(ue)throw ue;
+ if(!u)throw Error("Login first");
+ let {error}=await c.from("erp_data").upsert({user_id:u.id,payload:db,updated_at:new Date().toISOString()},{onConflict:"user_id"});
+ if(error)throw error;
+ user=u;
+}
+
+window.sync=async()=>{
+ try{
+  let c=init();
+  if(!c)throw Error("Save cloud settings first");
+  let {data:{user:u},error:ue}=await c.auth.getUser();
+  if(ue)throw ue;
+  if(!u)throw Error("Login first");
+  user=u;
+  let {data,error}=await c.from("erp_data").select("payload").eq("user_id",u.id).maybeSingle();
+  if(error)throw error;
+  if(data&&data.payload){
+   let remote=norm(data.payload),merged=empty();
+   T.forEach(t=>{
+    let m=new Map();
+    remote[t].forEach(x=>{if(x&&x.id)m.set(x.id,x)});
+    db[t].forEach(x=>{if(x&&x.id)m.set(x.id,x)});
+    merged[t]=[...m.values()];
+   });
+   db=merged;
+  }
+  persist();
+  await cloudSave();
+  render();
+  alert("Sync complete. Local and cloud records merged by ID.");
+ }catch(e){
+  alert("Sync failed: "+e.message+"\nLocal data remains. Download backup and check setup.");
  }
 };
 
-let db = loadDB();
-let supabaseClient = null;
-let currentUser = null;
-let currentPage = "dashboard";
-
-function blankDB(){
- return {
-  products:[],customers:[],suppliers:[],sales:[],purchases:[],
-  stockin:[],stockout:[],serials:[],payments:[]
- };
-}
-function loadDB(){
- try{
-  const d=JSON.parse(localStorage.getItem(STORE_KEY)||"{}");
-  return Object.assign(blankDB(),d);
- }catch(e){return blankDB();}
-}
-function persist(){
- localStorage.setItem(STORE_KEY,JSON.stringify(db));
-}
-function settings(){
- try{return JSON.parse(localStorage.getItem(SET_KEY)||"{}");}
- catch(e){return {};}
-}
-function saveSettings(){
- const url=document.getElementById("sbUrl").value.trim().replace(/\/$/,"");
- const key=document.getElementById("sbKey").value.trim();
- if(!url.startsWith("https://")||!key){
-  return setStatus("authStatus","Please enter a valid HTTPS Supabase URL and Publishable Key.");
- }
- if(key.toLowerCase().includes("service_role")){
-  return setStatus("authStatus","Do not use a service_role key. Use the Publishable key.");
- }
- localStorage.setItem(SET_KEY,JSON.stringify({url,key}));
- initSupabase();
- setStatus("authStatus","Settings saved on this device.");
-}
-function initSupabase(){
- const s=settings();
- if(!s.url||!s.key||!window.supabase)return null;
- supabaseClient=window.supabase.createClient(s.url,s.key);
- return supabaseClient;
-}
-function setStatus(id,msg){
- const el=document.getElementById(id);
- if(el)el.textContent=msg;
-}
-function escapeHTML(v){
- return String(v??"").replace(/[&<>"']/g,c=>({
- "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
- })[c]);
-}
-function money(n){return "₹"+(Number(n)||0).toLocaleString("en-IN",{maximumFractionDigits:2});}
-function totalSales(){return db.sales.reduce((s,r)=>s+Number(r.total||calcTotal(r)),0);}
-function calcTotal(r){
- const base=(Number(r.qty)||0)*(Number(r.rate)||0);
- return base+base*(Number(r.tax)||0)/100;
-}
-function outstanding(r){return Math.max(0,calcTotal(r)-(Number(r.paid)||0));}
-function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8);}
-function toggleMenu(){document.getElementById("nav").classList.toggle("open");}
-
-async function login(){
- const c=initSupabase();
- if(!c)return setStatus("authStatus","First save your Supabase URL and Publishable Key.");
- const email=document.getElementById("authEmail").value.trim();
- const password=document.getElementById("authPassword").value;
- if(!email||!password)return setStatus("authStatus","Enter email and password.");
- setStatus("authStatus","Logging in...");
- const {data,error}=await c.auth.signInWithPassword({email,password});
- if(error)return setStatus("authStatus","Login failed: "+error.message);
- currentUser=data.user;
- await afterLogin();
-}
-async function signup(){
- const c=initSupabase();
- if(!c)return setStatus("authStatus","First save your Supabase URL and Publishable Key.");
- const email=document.getElementById("authEmail").value.trim();
- const password=document.getElementById("authPassword").value;
- if(!email||password.length<6)return setStatus("authStatus","Enter email and a password with at least 6 characters.");
- setStatus("authStatus","Creating account...");
- const {data,error}=await c.auth.signUp({email,password});
- if(error)return setStatus("authStatus","Signup failed: "+error.message);
- if(data.session){
-  currentUser=data.user;
-  await afterLogin();
- }else{
-  setStatus("authStatus","Account created. Check your email for the confirmation link, then login.");
- }
-}
-async function afterLogin(){
- document.getElementById("authPage").classList.add("hidden");
- document.getElementById("app").classList.remove("hidden");
- document.getElementById("userLabel").textContent=currentUser?.email||"Logged in";
- showPage("dashboard");
- setStatus("authStatus","Login successful.");
-}
-async function logout(){
- if(supabaseClient){
-  await supabaseClient.auth.signOut();
- }
- currentUser=null;
- document.getElementById("app").classList.add("hidden");
- document.getElementById("authPage").classList.remove("hidden");
- document.getElementById("userLabel").textContent="Not logged in";
-}
-async function restoreSession(){
- const s=settings();
- document.getElementById("sbUrl").value=s.url||"";
- document.getElementById("sbKey").value=s.key||"";
- const c=initSupabase();
- if(!c)return;
- const {data}=await c.auth.getSession();
- if(data?.session){
-  currentUser=data.session.user;
-  await afterLogin();
- }
-}
-function showPage(page){
- currentPage=page;
- document.getElementById("nav").classList.remove("open");
- document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));
- if(page==="dashboard")return renderDashboard();
- if(page==="stock")return renderStock();
- if(page==="reports")return renderReports();
- if(page==="cloud")return renderCloud();
- if(modules[page])return renderModule(page);
-}
-function renderDashboard(){
- const low=db.products.filter(p=>stockFor(p.name)<=Number(p.minStock||0));
- document.getElementById("content").innerHTML=`
- <h2>Dashboard</h2>
- <div class="grid">
-  <div class="metric">Products<strong>${db.products.length}</strong></div>
-  <div class="metric">Customers<strong>${db.customers.length}</strong></div>
-  <div class="metric">Suppliers<strong>${db.suppliers.length}</strong></div>
-  <div class="metric">Sales Total<strong>${money(totalSales())}</strong></div>
-  <div class="metric">Sales Invoices<strong>${db.sales.length}</strong></div>
-  <div class="metric">Purchase Entries<strong>${db.purchases.length}</strong></div>
- </div>
- <div class="card"><h3>Low Stock Alert</h3>
- ${low.length?low.map(p=>`<p>${escapeHTML(p.name)} — Available: ${stockFor(p.name)}</p>`).join(""):"No low stock products."}
- </div>
- <div class="card"><h3>Quick Actions</h3>
- <div class="actions">
- <button onclick="showPage('sales')">New Sales Invoice</button>
- <button onclick="showPage('purchases')">New Purchase</button>
- <button onclick="showPage('products')">Add Product</button>
- <button onclick="showPage('cloud')">Save to Cloud</button>
- </div></div>`;
-}
-function renderModule(key){
- const m=modules[key];
- const rows=db[key];
- document.getElementById("content").innerHTML=`
- <div class="actions"><h2>${m.title}</h2><span style="flex:1"></span>
- <button onclick="addRecord('${key}')">+ Add New</button>
- <button onclick="exportCSV('${key}')">Export CSV</button></div>
- <div class="card"><input id="searchBox" placeholder="Search records..." oninput="filterRows('${key}')">
- <div id="tableArea"></div></div>`;
- drawTable(key,rows);
-}
-function drawTable(key,rows){
- const m=modules[key];
- const cols=[...m.fields.map(f=>[f[0],f[1]]),["__total","Total"],["__actions","Actions"]];
- const html=`<table><thead><tr>${cols.map(c=>`<th>${escapeHTML(c[1])}</th>`).join("")}</tr></thead>
- <tbody>${rows.map(r=>`<tr>${m.fields.map(f=>`<td>${escapeHTML(r[f[0]]??"")}</td>`).join("")}
- <td>${["sales","purchases"].includes(key)?money(calcTotal(r)):"—"}</td>
- <td><button onclick="editRecord('${key}','${r.id}')">Edit</button><button class="danger" onclick="deleteRecord('${key}','${r.id}')">Delete</button></td>
- </tr>`).join("")}</tbody></table>`;
- document.getElementById("tableArea").innerHTML=html;
-}
-function filterRows(key){
- const q=document.getElementById("searchBox").value.toLowerCase();
- const rows=db[key].filter(r=>Object.values(r).some(v=>String(v??"").toLowerCase().includes(q)));
- drawTable(key,rows);
-}
-function addRecord(key){openEditor(key,null);}
-function editRecord(key,id){openEditor(key,db[key].find(r=>r.id===id));}
-function openEditor(key,record){
- const m=modules[key];
- const fields=m.fields.map(f=>`
- <label>${escapeHTML(f[1])}</label>
- <input id="f_${f[0]}" type="${f[2]}" value="${escapeHTML(record?.[f[0]]??(f[2]==="date"?new Date().toISOString().slice(0,10):""))}"
- ${f[2]==="number"?'step="any"':""}>`).join("");
- const body=`<div class="card"><h3>${record?"Edit":"Add"} ${m.title}</h3>
- <form id="recordForm">${fields}<div class="actions">
- <button type="submit">Save Record</button>
- <button type="button" onclick="showPage('${key}')">Cancel</button>
- </div></form></div>`;
- document.getElementById("content").innerHTML=body;
- document.getElementById("recordForm").onsubmit=e=>{
-  e.preventDefault();
-  const r={...(record||{}),id:record?.id||uid(),updatedAt:new Date().toISOString()};
-  for(const f of m.fields){
-   const v=document.getElementById("f_"+f[0]).value;
-   r[f[0]]=f[2]==="number"?(Number(v)||0):v.trim();
-  }
-  if(key==="sales"||key==="purchases")r.total=calcTotal(r);
-  const idx=db[key].findIndex(x=>x.id===r.id);
-  if(idx>=0)db[key][idx]=r;else db[key].push(r);
-  persist();
-  showPage(key);
- };
-}
-function deleteRecord(key,id){
- if(!confirm("Delete this record?"))return;
- db[key]=db[key].filter(r=>r.id!==id);
- persist();showPage(key);
-}
-function stockFor(product){
- const p=db.products.find(x=>x.name.toLowerCase()===String(product||"").toLowerCase());
- let q=Number(p?.openingStock)||0;
- db.purchases.filter(x=>x.product===product).forEach(x=>q+=Number(x.qty)||0);
- db.stockin.filter(x=>x.product===product).forEach(x=>q+=Number(x.qty)||0);
- db.sales.filter(x=>x.product===product).forEach(x=>q-=Number(x.qty)||0);
- db.stockout.filter(x=>x.product===product).forEach(x=>q-=Number(x.qty)||0);
- return q;
-}
-function renderStock(){
- const rows=db.products.map(p=>({...p,available:stockFor(p.name)}));
- document.getElementById("content").innerHTML=`
- <h2>Stock Register</h2><div class="card"><button onclick="exportCSV('stock')">Export Stock CSV</button>
- <div class="table-wrap"><table><thead><tr><th>Product</th><th>Code</th><th>Opening Stock</th><th>Available</th><th>Minimum</th><th>Status</th></tr></thead><tbody>
- ${rows.map(p=>`<tr><td>${escapeHTML(p.name)}</td><td>${escapeHTML(p.code)}</td><td>${Number(p.openingStock)||0}</td><td>${p.available}</td><td>${Number(p.minStock)||0}</td><td>${p.available<=Number(p.minStock||0)?"LOW STOCK":"OK"}</td></tr>`).join("")}
- </tbody></table></div></div>`;
-}
-function renderReports(){
- document.getElementById("content").innerHTML=`
- <h2>Reports / Export</h2>
- <div class="grid">
- ${Object.keys(modules).map(k=>`<div class="card"><b>${modules[k].title}</b><p>${db[k].length} records</p><button onclick="exportCSV('${k}')">Export CSV</button></div>`).join("")}
- </div>
- <div class="card"><h3>Sales Summary</h3>
- <p>Total Sales: <b>${money(totalSales())}</b></p>
- <p>Total Purchases: <b>${money(db.purchases.reduce((s,r)=>s+calcTotal(r),0))}</b></p>
- <p>Customer Outstanding: <b>${money(db.sales.reduce((s,r)=>s+outstanding(r),0))}</b></p>
- </div>`;
-}
-function exportCSV(key){
- let rows=[];
- if(key==="stock"){
-  rows=[["Product","Code","Opening Stock","Available","Minimum Stock"],
-  ...db.products.map(p=>[p.name,p.code,p.openingStock,stockFor(p.name),p.minStock])];
- }else{
-  const m=modules[key];if(!m)return;
-  rows=[[...m.fields.map(f=>f[1]),"Total"],
-  ...db[key].map(r=>[...m.fields.map(f=>r[f[0]]??""),["sales","purchases"].includes(key)?calcTotal(r):""])];
- }
- const csv=rows.map(row=>row.map(v=>'"'+String(v??"").replace(/"/g,'""')+'"').join(",")).join("\r\n");
- download(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8;"}),key+"_report.csv");
-}
-function download(blob,name){
- const a=document.createElement("a");
- a.href=URL.createObjectURL(blob);a.download=name;a.click();
- setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-}
-function renderCloud(){
- document.getElementById("content").innerHTML=`
- <h2>Cloud / Backup / Restore</h2>
- <div class="card"><h3>Supabase Cloud Sync</h3>
- <p>Logged in: ${escapeHTML(currentUser?.email||"No user")}</p>
- <div class="actions">
- <button class="green" onclick="saveCloudNow()">Save to Cloud</button>
- <button onclick="syncCloud()">Sync / Merge Cloud</button>
- </div>
- <div id="cloudStatus" class="status">Local records: ${Object.values(db).reduce((s,a)=>s+a.length,0)}</div>
- </div>
- <div class="card"><h3>Local Backup</h3>
- <button onclick="backupJSON()">Download Backup JSON</button>
- <label>Restore from Backup JSON</label><input id="restoreFile" type="file" accept=".json,application/json">
- <button onclick="restoreJSON()">Restore Backup</button>
- <p class="small">Restore will replace the current local data. Take a backup first.</p>
- </div>
- <div class="card"><h3>Supabase SQL</h3><p>Run the SQL comments at the top of this HTML in Supabase SQL Editor before cloud sync.</p></div>`;
-}
-function backupJSON(){
- download(new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),"om-sai-instruments-backup.json");
-}
-async function restoreJSON(){
- const file=document.getElementById("restoreFile").files[0];
- if(!file)return alert("Select a backup JSON file first.");
- if(!confirm("Replace current local ERP data with this backup?"))return;
- try{
-  const obj=JSON.parse(await file.text());
-  const fresh=blankDB();
-  for(const k of Object.keys(fresh))fresh[k]=Array.isArray(obj[k])?obj[k]:[];
-  db=fresh;persist();renderCloud();alert("Backup restored.");
- }catch(e){alert("Invalid backup file: "+e.message);}
-}
-async function saveCloudNow(){
- const c=initSupabase();
- if(!c)return setStatus("cloudStatus","Save Supabase settings first.");
- if(!currentUser)return setStatus("cloudStatus","Please login first.");
- persist();
- setStatus("cloudStatus","Saving to cloud...");
- const {error}=await c.from("erp_data").upsert({
-  user_id:currentUser.id,payload:db,updated_at:new Date().toISOString()
- },{onConflict:"user_id"});
- if(error)return setStatus("cloudStatus","Cloud save failed: "+error.message);
- setStatus("cloudStatus","Save to Cloud successful. Records saved.");
-}
-function mergeArrays(local,remote){
- const map=new Map();
- for(const r of remote||[])if(r?.id)map.set(r.id,r);
- for(const r of local||[])if(r?.id)map.set(r.id,r);
- return [...map.values()];
-}
-async function syncCloud(){
- const c=initSupabase();
- if(!c)return setStatus("cloudStatus","Save Supabase settings first.");
- if(!currentUser)return setStatus("cloudStatus","Please login first.");
- setStatus("cloudStatus","Syncing...");
- const {data,error}=await c.from("erp_data").select("payload").eq("user_id",currentUser.id).maybeSingle();
- if(error)return setStatus("cloudStatus","Cloud read failed: "+error.message);
- if(data?.payload){
-  const remote=data.payload;
-  for(const k of Object.keys(blankDB()))db[k]=mergeArrays(db[k],remote[k]);
- }
- persist();
- const {error:saveError}=await c.from("erp_data").upsert({
-  user_id:currentUser.id,payload:db,updated_at:new Date().toISOString()
- },{onConflict:"user_id"});
- if(saveError)return setStatus("cloudStatus","Merged locally, but cloud save failed: "+saveError.message);
- setStatus("cloudStatus","Sync / Merge complete. Local and cloud records merged by ID.");
-}
-restoreSession();
+try{persist()}catch(e){}
+render();
+try{
+ let c=init();
+ if(c)c.auth.getSession().then(({data})=>{
+  if(data.session){user=data.session.user;render()}
+ });
+}catch(e){}
+})();
 </script>
 </body>
 </html>
