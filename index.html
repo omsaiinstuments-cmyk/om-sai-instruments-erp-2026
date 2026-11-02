@@ -137,10 +137,16 @@ function emptyDB(){
 
 function loadDB(){
  try {
-  return Object.assign(
-   emptyDB(),
-   JSON.parse(localStorage.getItem(KEY)||"{}")
-  );
+  const stored=JSON.parse(localStorage.getItem(KEY)||"{}");
+  const base=emptyDB();
+
+  Object.keys(base).forEach(k=>{
+   if(stored && Array.isArray(stored[k])){
+    base[k]=stored[k];
+   }
+  });
+
+  return base;
  } catch(e) {
   return emptyDB();
  }
@@ -149,6 +155,9 @@ function loadDB(){
 let db=loadDB();
 let page="dashboard";
 let language="en";
+
+/* FIX: Form handler is attached AFTER the new form is rendered. */
+let pendingFormHandler=null;
 
 const menus=[
  ["dashboard","Dashboard","डॅशबोर्ड"],
@@ -166,8 +175,12 @@ const menus=[
 ];
 
 function save(){
- localStorage.setItem(KEY,JSON.stringify(db));
- render();
+ try{
+  localStorage.setItem(KEY,JSON.stringify(db));
+  render();
+ }catch(e){
+  alert("डेटा सेव्ह झाला नाही. Browser storage तपासा आणि Backup घ्या.");
+ }
 }
 
 function id(){
@@ -207,7 +220,7 @@ function field(name,title,type="text",required=false){
 
 function select(name,title,items,required=true){
  return `<div class="field">
- <label>${title}</label>
+ <label>${title}${required?" *":""}</label>
  <select name="${name}" ${required?"required":""}>
  <option value="">Select ${title}</option>
  ${items.map(x=>`<option value="${esc(x.id)}">${esc(x.name||x.code||x.serial)}</option>`).join("")}
@@ -218,7 +231,7 @@ function form(title,fields){
  return `<section class="panel">
  <h2>${title}</h2>
  <form id="dataForm" class="formgrid">${fields}</form>
- <button class="btn" form="dataForm">Save</button>
+ <button class="btn" type="submit" form="dataForm">Save</button>
  <button class="btn secondary" type="button"
  onclick="document.getElementById('dataForm').reset()">Clear</button>
  </section>`;
@@ -241,6 +254,7 @@ function list(type,headers,columns){
 }
 
 window.deleteRow=function(type,recordId){
+ if(!Array.isArray(db[type]))return;
  if(confirm("Delete this record?")){
   db[type]=db[type].filter(x=>x.id!==recordId);
   save();
@@ -252,21 +266,36 @@ window.go=function(p){
  render();
 };
 
+/* FIXED FORM SAVE FUNCTION */
 function addForm(type,make){
- let f=document.getElementById("dataForm");
- if(!f)return;
+ pendingFormHandler=function(){
+  let f=document.getElementById("dataForm");
+  if(!f)return;
 
- f.onsubmit=function(e){
-  e.preventDefault();
-  let values=Object.fromEntries(new FormData(f).entries());
-  let record=make(values);
+  f.onsubmit=function(e){
+   e.preventDefault();
 
-  if(!record)return;
+   if(!f.reportValidity())return;
 
-  record.id=id();
-  db[type].push(record);
-  save();
-  alert("Record saved successfully.");
+   let values=Object.fromEntries(new FormData(f).entries());
+   let record=make(values);
+
+   if(!record)return;
+
+   record.id=id();
+   db[type].push(record);
+
+   try{
+    localStorage.setItem(KEY,JSON.stringify(db));
+   }catch(err){
+    db[type].pop();
+    alert("डेटा सेव्ह होऊ शकला नाही. Browser storage तपासा.");
+    return;
+   }
+
+   render();
+   alert("Record saved successfully.");
+  };
  };
 }
 
@@ -283,6 +312,7 @@ function render(){
  renderNav();
  let app=document.getElementById("app");
  let html="";
+ pendingFormHandler=null;
 
  if(page==="dashboard"){
   html=`<div class="stats">
@@ -317,7 +347,7 @@ function render(){
   </section>`;
 
   addForm("products",f=>({
-   code:f.code,name:f.name,make:f.make,model:f.model,
+   code:f.code.trim(),name:f.name.trim(),make:f.make,model:f.model,
    unit:f.unit||"pcs",opening:n(f.opening),reorder:n(f.reorder),
    cost:n(f.cost),price:n(f.price)
   }));
@@ -337,7 +367,20 @@ function render(){
   [x=>x.name,x=>x.mobile,x=>x.email,x=>x.gstin,x=>x.city,x=>x.address])}
   </section>`;
 
-  addForm("customers",f=>f);
+  addForm("customers",f=>{
+   if(!f.name || !f.name.trim()){
+    alert("Please enter Customer Name.");
+    return null;
+   }
+   return {
+    name:f.name.trim(),
+    mobile:f.mobile.trim(),
+    email:f.email.trim(),
+    gstin:f.gstin.trim(),
+    city:f.city.trim(),
+    address:f.address.trim()
+   };
+  });
  }
 
  if(page==="suppliers"){
@@ -354,7 +397,20 @@ function render(){
   [x=>x.name,x=>x.mobile,x=>x.email,x=>x.gstin,x=>x.city,x=>x.address])}
   </section>`;
 
-  addForm("suppliers",f=>f);
+  addForm("suppliers",f=>{
+   if(!f.name || !f.name.trim()){
+    alert("Please enter Supplier Name.");
+    return null;
+   }
+   return {
+    name:f.name.trim(),
+    mobile:f.mobile.trim(),
+    email:f.email.trim(),
+    gstin:f.gstin.trim(),
+    city:f.city.trim(),
+    address:f.address.trim()
+   };
+  });
  }
 
  if(page==="sales"||page==="purchases"){
@@ -379,13 +435,20 @@ function render(){
   addForm(type,f=>{
    let p=db.products.find(x=>x.id===f.product);
    let party=parties.find(x=>x.id===f.party);
-   if(!p||!party){alert("Select a product and customer/supplier first.");return null;}
-   let qty=n(f.qty),rate=n(f.rate),total=qty*rate,paid=n(f.paid);
-   if(qty<=0||rate<0||paid<0||paid>total){
-    alert("Please check quantity, rate and paid amount.");return null;
+   if(!p||!party){
+    alert("Select a product and customer/supplier first.");
+    return null;
    }
+
+   let qty=n(f.qty),rate=n(f.rate),total=qty*rate,paid=n(f.paid);
+
+   if(qty<=0||rate<0||paid<0||paid>total){
+    alert("Please check quantity, rate and paid amount.");
+    return null;
+   }
+
    return {
-    doc:f.doc,partyName:party.name,date:f.date,
+    doc:f.doc.trim(),partyName:party.name,date:f.date,
     product:p.id,productName:p.name,qty:qty,rate:rate,
     total:total,paid:paid
    };
@@ -409,9 +472,13 @@ function render(){
 
   addForm("stock",f=>{
    if(!db.products.some(p=>p.id===f.product)||n(f.qty)<=0){
-    alert("Select product and enter valid quantity.");return null;
+    alert("Select product and enter valid quantity.");
+    return null;
    }
-   return {product:f.product,direction:f.direction,qty:n(f.qty),date:f.date,reference:f.reference,notes:f.notes};
+   return {
+    product:f.product,direction:f.direction,qty:n(f.qty),
+    date:f.date,reference:f.reference,notes:f.notes
+   };
   });
  }
 
@@ -419,11 +486,17 @@ function render(){
   let rows=db.products.map(p=>{
    let incoming=db.stock.filter(x=>x.product===p.id&&x.direction==="In").reduce((s,x)=>s+n(x.qty),0)
     +db.purchases.filter(x=>x.product===p.id).reduce((s,x)=>s+n(x.qty),0);
+
    let outgoing=db.stock.filter(x=>x.product===p.id&&x.direction==="Out").reduce((s,x)=>s+n(x.qty),0)
     +db.sales.filter(x=>x.product===p.id).reduce((s,x)=>s+n(x.qty),0);
+
    let balance=n(p.opening)+incoming-outgoing;
-   return `<tr><td>${esc(p.code)}</td><td>${esc(p.name)}</td><td>${p.opening}</td><td>${incoming}</td><td>${outgoing}</td><td>${balance}</td><td>${balance<=n(p.reorder)?"Low Stock":"OK"}</td></tr>`;
+
+   return `<tr><td>${esc(p.code)}</td><td>${esc(p.name)}</td>
+   <td>${p.opening}</td><td>${incoming}</td><td>${outgoing}</td>
+   <td>${balance}</td><td>${balance<=n(p.reorder)?"Low Stock":"OK"}</td></tr>`;
   });
+
   html=`<section class="panel"><h2>Stock Register</h2>
   ${table(["Code","Product","Opening","In","Out","Balance","Status"],rows)}</section>`;
  }
@@ -445,12 +518,18 @@ function render(){
   [x=>db.products.find(p=>p.id===x.product)?.name||"",x=>x.serial,x=>x.status,x=>x.customer,x=>x.calibration,x=>x.nextcal,x=>x.certificate,x=>x.warranty])}
   </section>`;
 
-  addForm("serials",f=>({product:f.product,serial:f.serial,status:f.status,customer:f.customer,calibration:f.calibration,nextcal:f.nextcal,certificate:f.certificate,warranty:f.warranty}));
+  addForm("serials",f=>({
+   product:f.product,serial:f.serial.trim(),status:f.status,
+   customer:f.customer,calibration:f.calibration,nextcal:f.nextcal,
+   certificate:f.certificate,warranty:f.warranty
+  }));
  }
 
  if(page==="payments"){
   html=form("Payment / Outstanding Entry",
-   `<div class="field"><label>Type</label><select name="type"><option>Receipt from Customer</option><option>Payment to Supplier</option></select></div>`+
+   `<div class="field"><label>Type</label><select name="type">
+   <option>Receipt from Customer</option><option>Payment to Supplier</option>
+   </select></div>`+
    field("party","Customer / Supplier","text",true)+
    field("date","Date","date",true)+
    field("amount","Amount ₹","number",true)+
@@ -467,7 +546,16 @@ function render(){
    ...db.purchases.map(x=>`<tr><td>Purchase</td><td>${esc(x.partyName)}</td><td>${esc(x.doc)}</td><td>${money(x.total)}</td><td>${money(x.paid)}</td><td>${money(x.total-x.paid)}</td></tr>`)])}
   </section>`;
 
-  addForm("payments",f=>({type:f.type,party:f.party,date:f.date,amount:n(f.amount),reference:f.reference,notes:f.notes}));
+  addForm("payments",f=>{
+   if(n(f.amount)<=0){
+    alert("Please enter a valid payment amount.");
+    return null;
+   }
+   return {
+    type:f.type,party:f.party.trim(),date:f.date,
+    amount:n(f.amount),reference:f.reference,notes:f.notes
+   };
+  });
  }
 
  if(page==="reports"){
@@ -492,36 +580,61 @@ function render(){
   </section>`;
  }
 
+ /* FIX: First render the form, then attach the submit handler. */
  app.innerHTML=html;
+
+ if(pendingFormHandler){
+  pendingFormHandler();
+  pendingFormHandler=null;
+ }
 }
 
 window.downloadBackup=function(){
  let blob=new Blob([JSON.stringify({data:db},null,2)],{type:"application/json"});
  let url=URL.createObjectURL(blob);
  let a=document.createElement("a");
- a.href=url;a.download="om-sai-instruments-backup.json";
- a.click();URL.revokeObjectURL(url);
+ a.href=url;
+ a.download="om-sai-instruments-backup.json";
+ document.body.appendChild(a);
+ a.click();
+ a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
 };
 
 window.restoreBackup=function(event){
  let file=event.target.files[0];
  if(!file)return;
+
  let reader=new FileReader();
+
  reader.onload=function(){
   try{
    let obj=JSON.parse(reader.result);
    let incoming=obj.data||obj;
+
    if(!confirm("Restore backup? Current records will be replaced."))return;
+
    let next=emptyDB();
+
    Object.keys(next).forEach(k=>{
-    if(Array.isArray(incoming[k]))next[k]=incoming[k];
+    if(incoming && Array.isArray(incoming[k])){
+     next[k]=incoming[k];
+    }
    });
-   db=next;
-   localStorage.setItem(KEY,JSON.stringify(db));
-   render();
-   alert("Backup restored.");
-  }catch(e){alert("Invalid backup file.");}
+
+   try{
+    localStorage.setItem(KEY,JSON.stringify(next));
+    db=next;
+    render();
+    alert("Backup restored.");
+   }catch(storageError){
+    alert("Backup restore failed. Browser storage तपासा.");
+   }
+  }catch(e){
+   alert("Invalid backup file.");
+  }
  };
+
  reader.readAsText(file);
 };
 
