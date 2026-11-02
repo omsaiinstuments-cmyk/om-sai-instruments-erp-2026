@@ -1,0 +1,135 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Om Sai Instruments ERP</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f1f5f9;
+      color: #172033;
+    }
+    header {
+      background: #12345a;
+      color: white;
+      padding: 22px 16px;
+    }
+    header h1 { margin: 0 0 8px; font-size: 23px; }
+    header p { margin: 0; }
+    main { padding: 18px; max-width: 900px; margin: auto; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+    }
+    .card {
+      background: white;
+      padding: 18px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px #0001;
+    }
+    .card h3 { margin-top: 0; font-size: 15px; }
+    .card p { font-size: 20px; font-weight: bold; }
+    section {
+      margin-top: 20px;
+      background: white;
+      padding: 18px;
+      border-radius: 12px;
+    }
+    input, button {
+      padding: 12px;
+      margin: 5px 0;
+      border-radius: 7px;
+      font-size: 15px;
+    }
+    input { border: 1px solid #cbd5e1; width: 100%; }
+    button {
+      border: 0;
+      background: #1768ac;
+      color: white;
+      cursor: pointer;
+    }
+    li { padding: 7px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Om Sai Instruments</h1>
+    <p>ERP Management System</p>
+  </header>
+
+  <main>
+    <h2>Dashboard</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>Customers</h3>
+        <p id="customers">0</p>
+      </div>
+      <div class="card">
+        <h3>Products</h3>
+        <p id="products">0</p>
+      </div>
+      <div class="card">
+        <h3>Sales Entries</h3>
+        <p id="sales">0</p>
+      </div>
+    </div>
+
+    <section>
+      <h2>Add Customer</h2>
+      <input id="customerName" placeholder="Customer name">
+      <button onclick="addCustomer()">Add Customer</button>
+      <ul id="customerList"></ul>
+    </section>
+
+    <section>
+      <h2>Add Product</h2>
+      <input id="productName" placeholder="Product name">
+      <button onclick="addProduct()">Add Product</button>
+      <ul id="productList"></ul>
+    </section>
+
+    <section>
+      <h2>Sales Entry</h2>
+      <input id="saleDetails" placeholder="Invoice number or sales details">
+      <button onclick="addSale()">Add Sales Entry</button>
+      <ul id="salesList"></ul>
+    </section>
+  </main>
+
+  <script>
+    const customers = [];
+    const products = [];
+    const sales = [];
+
+    function addEntry(inputId, listId, data, countId) {
+      const input = document.getElementById(inputId);
+      const value = input.value.trim();
+      if (!value) {
+        alert("Please enter a value.");
+        return;
+      }
+      data.push(value);
+      const li = document.createElement("li");
+      li.textContent = value;
+      document.getElementById(listId).appendChild(li);
+      document.getElementById(countId).textContent = data.length;
+      input.value = "";
+    }
+
+    function addCustomer() {
+      addEntry("customerName", "customerList", customers, "customers");
+    }
+    function addProduct() {
+      addEntry("productName", "productList", products, "products");
+    }
+    function addSale() {
+      addEntry("saleDetails", "salesList", sales, "sales");
+    }
+  </script>
+</body>
+</html>
